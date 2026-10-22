@@ -18,7 +18,6 @@ jobs:
           mkdir -p app/src/main/java/com/example/netspeed
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
-          mkdir -p app/src/main/res/values
 
           cat << 'EOF' > settings.gradle
           pluginManagement {
@@ -131,7 +130,6 @@ jobs:
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
               <solid android:color="#1E1E2C"/>
               <corners android:radius="16dp"/>
-              <stroke android:width="1dp" android:color="#2A2A3D"/>
           </shape>
           EOF
 
@@ -159,7 +157,6 @@ jobs:
               android:padding="24dp"
               android:background="#0F0F1A">
 
-              <!-- App Header -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
@@ -196,7 +193,6 @@ jobs:
                   </LinearLayout>
               </LinearLayout>
 
-              <!-- Speed Card -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
@@ -224,7 +220,6 @@ jobs:
                       android:textStyle="bold"/>
               </LinearLayout>
 
-              <!-- Stats Cards Row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
@@ -232,7 +227,6 @@ jobs:
                   android:weightSum="2"
                   android:layout_marginBottom="30dp">
 
-                  <!-- WiFi Stats -->
                   <LinearLayout
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
@@ -260,7 +254,6 @@ jobs:
                           android:layout_marginTop="8dp"/>
                   </LinearLayout>
 
-                  <!-- Mobile Data Stats -->
                   <LinearLayout
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
@@ -289,7 +282,6 @@ jobs:
                   </LinearLayout>
               </LinearLayout>
 
-              <!-- Action Buttons -->
               <Button
                   android:id="@+id/btnStart"
                   android:layout_width="match_parent"
@@ -337,7 +329,6 @@ jobs:
           import android.net.TrafficStats
           import android.os.*
           import androidx.core.app.NotificationCompat
-          import androidx.core.graphics.drawable.IconCompat
 
           class SpeedMeterService : Service() {
 
@@ -569,7 +560,6 @@ jobs:
           gradle-version: '8.5'
 
       - name: Build Debug APK
-        - name: Build Debug APK
         run: gradle assembleDebug
 
       - name: Upload APK
