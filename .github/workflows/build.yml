@@ -1,4 +1,4 @@
-name: Build NetSpeed APK
+name: Build Modern NetSpeed APK
 
 on:
   push:
@@ -13,10 +13,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate Android Project Files
+      - name: Generate Modern Android Project Files
         run: |
           mkdir -p app/src/main/java/com/example/netspeed
           mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/values
 
           cat << 'EOF' > settings.gradle
           pluginManagement {
@@ -33,7 +35,7 @@ jobs:
                   mavenCentral()
               }
           }
-          rootProject.name = "NetSpeedMeter"
+          rootProject.name = "NetSpeedPro"
           include ':app'
           EOF
 
@@ -56,8 +58,8 @@ jobs:
                   applicationId "com.example.netspeed"
                   minSdk 24
                   targetSdk 34
-                  versionCode 1
-                  versionName "1.0"
+                  versionCode 2
+                  versionName "2.0"
               }
 
               compileOptions {
@@ -72,6 +74,7 @@ jobs:
           dependencies {
               implementation 'androidx.core:core-ktx:1.12.0'
               implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
           }
           EOF
 
@@ -85,9 +88,11 @@ jobs:
 
               <application
                   android:allowBackup="true"
-                  android:label="عداد الإنترنت"
+                  android:label="NetSpeed Pro"
+                  android:icon="@drawable/ic_logo"
+                  android:roundIcon="@drawable/ic_logo"
                   android:supportsRtl="true"
-                  android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+                  android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
 
                   <activity
                       android:name=".MainActivity"
@@ -107,86 +112,170 @@ jobs:
           </manifest>
           EOF
 
+          cat << 'EOF' > app/src/main/res/drawable/ic_logo.xml
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+            <path
+                android:fillColor="#121212"
+                android:pathData="M0,0h24v24h-24z"/>
+            <path
+                android:fillColor="#00E676"
+                android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM13,17h-2v-6h2v6zM13,9h-2L11,7h2v2z"/>
+          </vector>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_card.xml
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#1E1E2C"/>
+              <corners android:radius="16dp"/>
+              <stroke android:width="1dp" android:color="#2A2A3D"/>
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_button_start.xml
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#00C853"/>
+              <corners android:radius="14dp"/>
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_button_stop.xml
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#FF3D00"/>
+              <corners android:radius="14dp"/>
+          </shape>
+          EOF
+
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
-              android:gravity="center"
+              android:gravity="center_horizontal"
               android:padding="24dp"
-              android:background="#121212">
+              android:background="#0F0F1A">
 
-              <TextView
-                  android:layout_width="wrap_content"
+              <!-- App Header -->
+              <LinearLayout
+                  android:layout_width="match_parent"
                   android:layout_height="wrap_content"
-                  android:text="مراقب سرعة واستهلاك الإنترنت"
-                  android:textColor="#FFFFFF"
-                  android:textSize="22sp"
-                  android:textStyle="bold"
-                  android:layout_marginBottom="32dp"/>
+                  android:orientation="horizontal"
+                  android:gravity="center_vertical"
+                  android:layout_marginTop="20dp"
+                  android:layout_marginBottom="30dp">
+                  
+                  <ImageView
+                      android:layout_width="48dp"
+                      android:layout_height="48dp"
+                      android:src="@drawable/ic_logo"/>
 
-              <TextView
-                  android:id="@+id/tvSpeed"
-                  android:layout_width="wrap_content"
+                  <LinearLayout
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical"
+                      android:layout_marginStart="16dp">
+                      
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="NetSpeed Pro"
+                          android:textColor="#FFFFFF"
+                          android:textSize="20sp"
+                          android:textStyle="bold"/>
+
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="مراقب السرعة واستهلاك البيانات"
+                          android:textColor="#8F8FA3"
+                          android:textSize="12sp"/>
+                  </LinearLayout>
+              </LinearLayout>
+
+              <!-- Speed Card -->
+              <LinearLayout
+                  android:layout_width="match_parent"
                   android:layout_height="wrap_content"
-                  android:text="0 KB/s"
-                  android:textColor="#00E676"
-                  android:textSize="48sp"
-                  android:textStyle="bold"
-                  android:layout_marginBottom="32dp"/>
+                  android:orientation="vertical"
+                  android:gravity="center"
+                  android:padding="24dp"
+                  android:background="@drawable/bg_card"
+                  android:layout_marginBottom="20dp">
 
+                  <TextView
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="السرعة الحالية"
+                      android:textColor="#8F8FA3"
+                      android:textSize="14sp"
+                      android:layout_marginBottom="8dp"/>
+
+                  <TextView
+                      android:id="@+id/tvSpeed"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="0.0 KB/s"
+                      android:textColor="#00E676"
+                      android:textSize="40sp"
+                      android:textStyle="bold"/>
+              </LinearLayout>
+
+              <!-- Stats Cards Row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:orientation="horizontal"
                   android:weightSum="2"
-                  android:layout_marginBottom="32dp">
+                  android:layout_marginBottom="30dp">
 
+                  <!-- WiFi Stats -->
                   <LinearLayout
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
                       android:layout_weight="1"
                       android:orientation="vertical"
-                      android:gravity="center"
                       android:padding="16dp"
-                      android:background="#1E1E1E"
+                      android:background="@drawable/bg_card"
                       android:layout_marginEnd="8dp">
 
                       <TextView
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:text="استهلاك الواي فاي"
-                          android:textColor="#AAAAAA"
-                          android:textSize="14sp"/>
+                          android:textColor="#8F8FA3"
+                          android:textSize="12sp"/>
 
                       <TextView
                           android:id="@+id/tvWifi"
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:text="0 MB"
-                          android:textColor="#29B6F6"
-                          android:textSize="20sp"
+                          android:textColor="#00B0FF"
+                          android:textSize="18sp"
                           android:textStyle="bold"
                           android:layout_marginTop="8dp"/>
                   </LinearLayout>
 
+                  <!-- Mobile Data Stats -->
                   <LinearLayout
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
                       android:layout_weight="1"
                       android:orientation="vertical"
-                      android:gravity="center"
                       android:padding="16dp"
-                      android:background="#1E1E1E"
+                      android:background="@drawable/bg_card"
                       android:layout_marginStart="8dp">
 
                       <TextView
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:text="استهلاك البيانات"
-                          android:textColor="#AAAAAA"
-                          android:textSize="14sp"/>
+                          android:textColor="#8F8FA3"
+                          android:textSize="12sp"/>
 
                       <TextView
                           android:id="@+id/tvMobile"
@@ -194,39 +283,44 @@ jobs:
                           android:layout_height="wrap_content"
                           android:text="0 MB"
                           android:textColor="#FFCA28"
-                          android:textSize="20sp"
+                          android:textSize="18sp"
                           android:textStyle="bold"
                           android:layout_marginTop="8dp"/>
                   </LinearLayout>
               </LinearLayout>
 
+              <!-- Action Buttons -->
               <Button
                   android:id="@+id/btnStart"
                   android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:text="تشغيل المؤشر في أعلى الشاشة"
-                  android:backgroundTint="#00C853"
+                  android:layout_height="52dp"
+                  android:text="تشغيل المؤشر بالاعلى"
+                  android:background="@drawable/bg_button_start"
                   android:textColor="#FFFFFF"
-                  android:textSize="16sp"
-                  android:layout_marginBottom="12dp"/>
+                  android:textSize="15sp"
+                  android:textStyle="bold"
+                  android:layout_marginBottom="12dp"
+                  app:backgroundTint="@null"/>
 
               <Button
                   android:id="@+id/btnStop"
                   android:layout_width="match_parent"
-                  android:layout_height="55dp"
+                  android:layout_height="52dp"
                   android:text="إيقاف المؤشر"
-                  android:backgroundTint="#D50000"
+                  android:background="@drawable/bg_button_stop"
                   android:textColor="#FFFFFF"
-                  android:textSize="16sp"
-                  android:layout_marginBottom="12dp"/>
+                  android:textSize="15sp"
+                  android:textStyle="bold"
+                  android:layout_marginBottom="12dp"
+                  app:backgroundTint="@null"/>
 
               <Button
                   android:id="@+id/btnReset"
                   android:layout_width="match_parent"
-                  android:layout_height="50dp"
-                  android:text="تصفير عداد الاستهلاك"
-                  android:backgroundTint="#424242"
-                  android:textColor="#FFFFFF"
+                  android:layout_height="48dp"
+                  android:text="تصفير العدادات"
+                  android:backgroundTint="#2A2A3D"
+                  android:textColor="#B0B0C3"
                   android:textSize="14sp"/>
 
           </LinearLayout>
@@ -250,7 +344,7 @@ jobs:
               private val handler = Handler(Looper.getMainLooper())
               private var lastTotalBytes: Long = 0
               private var lastMobileBytes: Long = 0
-              private val CHANNEL_ID = "NetSpeedChannel"
+              private val CHANNEL_ID = "NetSpeedProChannel"
 
               private val runnable = object : Runnable {
                   override fun run() {
@@ -310,31 +404,15 @@ jobs:
                   )
 
                   return NotificationCompat.Builder(this, CHANNEL_ID)
-                      .setContentTitle("السرعة الآن: $speedVal $speedUnit")
-                      .setContentText("واي فاي: $wifiText  |  بيانات: $mobileText")
-                      .setSmallIcon(createSpeedIcon(speedVal, speedUnit))
+                      .setContentTitle("السرعة: $speedVal $speedUnit")
+                      .setContentText("واي فاي: $wifiText | بيانات: $mobileText")
+                      .setSmallIcon(android.R.drawable.stat_sys_download_done)
                       .setContentIntent(pendingIntent)
                       .setOngoing(true)
                       .setOnlyAlertOnce(true)
                       .setSilent(true)
                       .setPriority(NotificationCompat.PRIORITY_LOW)
                       .build()
-              }
-
-              private fun createSpeedIcon(value: String, unit: String): IconCompat {
-                  val bitmap = Bitmap.createBitmap(96, 96, Bitmap.Config.ARGB_8888)
-                  val canvas = Canvas(bitmap)
-                  val paint = Paint().apply {
-                      color = Color.WHITE
-                      isAntiAlias = true
-                      textAlign = Paint.Align.CENTER
-                      typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                  }
-                  paint.textSize = 46f
-                  canvas.drawText(value, 48f, 44f, paint)
-                  paint.textSize = 28f
-                  canvas.drawText(unit, 48f, 84f, paint)
-                  return IconCompat.createWithBitmap(bitmap)
               }
 
               private fun getSpeedParts(bytes: Long): Pair<String, String> {
@@ -362,7 +440,7 @@ jobs:
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                       val channel = NotificationChannel(
                           CHANNEL_ID,
-                          "مؤشر سرعة الإنترنت",
+                          "NetSpeed Pro Service",
                           NotificationManager.IMPORTANCE_LOW
                       )
                       channel.setShowBadge(false)
@@ -491,10 +569,11 @@ jobs:
           gradle-version: '8.5'
 
       - name: Build Debug APK
+        - name: Build Debug APK
         run: gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: NetSpeedMeter-APK
+          name: NetSpeedPro-APK
           path: app/build/outputs/apk/debug/app-debug.apk
