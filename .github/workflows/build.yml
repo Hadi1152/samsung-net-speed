@@ -291,8 +291,7 @@ jobs:
                   android:textColor="#FFFFFF"
                   android:textSize="15sp"
                   android:textStyle="bold"
-                  android:layout_marginBottom="12dp"
-                  app:backgroundTint="@null"/>
+                  android:layout_marginBottom="12dp"/>
 
               <Button
                   android:id="@+id/btnStop"
@@ -303,8 +302,7 @@ jobs:
                   android:textColor="#FFFFFF"
                   android:textSize="15sp"
                   android:textStyle="bold"
-                  android:layout_marginBottom="12dp"
-                  app:backgroundTint="@null"/>
+                  android:layout_marginBottom="12dp"/>
 
               <Button
                   android:id="@+id/btnReset"
