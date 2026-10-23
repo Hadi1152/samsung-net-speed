@@ -13,11 +13,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
       - name: Generate Modern Android Project Files
         run: |
-          mkdir -p app/src/main/java/com/example/netspeed
+          mkdir -p app/src/main/java/com/netspeed/pro/meter
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
+
+          keytool -genkeypair -v \
+            -keystore app/release-key.jks \
+            -alias netspeed_key \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass 123456 \
+            -keypass 123456 \
+            -dname "CN=AbuAlHoud, OU=Dev, O=NetSpeed, L=Aleppo, S=SY, C=SY"
 
           cat << 'EOF' > settings.gradle
           pluginManagement {
@@ -50,15 +66,36 @@ jobs:
           }
 
           android {
-              namespace 'com.example.netspeed'
+              namespace 'com.netspeed.pro.meter'
               compileSdk 34
 
               defaultConfig {
-                  applicationId "com.example.netspeed"
-                  minSdk 24
+                  applicationId "com.netspeed.pro.meter"
+                  minSdk 21
                   targetSdk 34
-                  versionCode 2
-                  versionName "2.0"
+                  versionCode 4
+                  versionName "4.0"
+              }
+
+              signingConfigs {
+                  config {
+                      storeFile file('release-key.jks')
+                      storePassword '123456'
+                      keyAlias 'netspeed_key'
+                      keyPassword '123456'
+                      v1SigningEnabled true
+                      v2SigningEnabled true
+                  }
+              }
+
+              buildTypes {
+                  debug {
+                      signingConfig signingConfigs.config
+                  }
+                  release {
+                      signingConfig signingConfigs.config
+                      minifyEnabled false
+                  }
               }
 
               compileOptions {
@@ -73,7 +110,6 @@ jobs:
           dependencies {
               implementation 'androidx.core:core-ktx:1.12.0'
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
           }
           EOF
 
@@ -84,6 +120,7 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
               <application
                   android:allowBackup="true"
@@ -91,7 +128,7 @@ jobs:
                   android:icon="@drawable/ic_logo"
                   android:roundIcon="@drawable/ic_logo"
                   android:supportsRtl="true"
-                  android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
+                  android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
 
                   <activity
                       android:name=".MainActivity"
@@ -117,207 +154,407 @@ jobs:
               android:height="108dp"
               android:viewportWidth="24"
               android:viewportHeight="24">
-            <path
-                android:fillColor="#121212"
-                android:pathData="M0,0h24v24h-24z"/>
-            <path
-                android:fillColor="#00E676"
-                android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM13,17h-2v-6h2v6zM13,9h-2L11,7h2v2z"/>
+              <path
+                  android:fillColor="#161626"
+                  android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2z"/>
+              <path
+                  android:fillColor="#00E676"
+                  android:pathData="M12,4c4.41,0 8,3.59 8,8s-3.59,8 -8,8 -8,-3.59 -8,-8 3.59,-8 8,-8m0,-2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2z"/>
+              <path
+                  android:fillColor="#00B0FF"
+                  android:pathData="M13.5,7h-3v6l4.25,2.52 0.75,-1.23 -3.5,-2.04V7z"/>
           </vector>
           EOF
 
           cat << 'EOF' > app/src/main/res/drawable/bg_card.xml
+          <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#1E1E2C"/>
-              <corners android:radius="16dp"/>
+              <solid android:color="#1A1A2E"/>
+              <corners android:radius="18dp"/>
+              <stroke android:width="1dp" android:color="#2E2E48"/>
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_footer.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#141424"/>
+              <corners android:radius="30dp"/>
+              <stroke android:width="1dp" android:color="#3000E676"/>
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_status_on.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#143824"/>
+              <corners android:radius="50dp"/>
+              <stroke android:width="1.5dp" android:color="#00E676"/>
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_status_off.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#38141E"/>
+              <corners android:radius="50dp"/>
+              <stroke android:width="1.5dp" android:color="#FF5252"/>
           </shape>
           EOF
 
           cat << 'EOF' > app/src/main/res/drawable/bg_button_start.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#00C853"/>
-              <corners android:radius="14dp"/>
-          </shape>
+          <?xml version="1.0" encoding="utf-8"?>
+          <ripple xmlns:android="http://schemas.android.com/apk/res/android"
+              android:color="#80FFFFFF">
+              <item>
+                  <selector>
+                      <item android:state_pressed="true">
+                          <shape android:shape="rectangle">
+                              <solid android:color="#009624"/>
+                              <corners android:radius="14dp"/>
+                              <stroke android:width="2dp" android:color="#FFFFFF"/>
+                          </shape>
+                      </item>
+                      <item android:state_hovered="true">
+                          <shape android:shape="rectangle">
+                              <solid android:color="#00E676"/>
+                              <corners android:radius="14dp"/>
+                              <stroke android:width="2dp" android:color="#FFFFFF"/>
+                          </shape>
+                      </item>
+                      <item>
+                          <shape android:shape="rectangle">
+                              <solid android:color="#00C853"/>
+                              <corners android:radius="14dp"/>
+                          </shape>
+                      </item>
+                  </selector>
+              </item>
+          </ripple>
           EOF
 
           cat << 'EOF' > app/src/main/res/drawable/bg_button_stop.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#FF3D00"/>
-              <corners android:radius="14dp"/>
-          </shape>
+          <?xml version="1.0" encoding="utf-8"?>
+          <ripple xmlns:android="http://schemas.android.com/apk/res/android"
+              android:color="#80FFFFFF">
+              <item>
+                  <selector>
+                      <item android:state_pressed="true">
+                          <shape android:shape="rectangle">
+                              <solid android:color="#9B0000"/>
+                              <corners android:radius="14dp"/>
+                              <stroke android:width="2dp" android:color="#FFFFFF"/>
+                          </shape>
+                      </item>
+                      <item android:state_hovered="true">
+                          <shape android:shape="rectangle">
+                              <solid android:color="#FF5252"/>
+                              <corners android:radius="14dp"/>
+                              <stroke android:width="2dp" android:color="#FFFFFF"/>
+                          </shape>
+                      </item>
+                      <item>
+                          <shape android:shape="rectangle">
+                              <solid android:color="#D50000"/>
+                              <corners android:radius="14dp"/>
+                          </shape>
+                      </item>
+                  </selector>
+              </item>
+          </ripple>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_button_overlay.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <ripple xmlns:android="http://schemas.android.com/apk/res/android"
+              android:color="#80FFFFFF">
+              <item>
+                  <selector>
+                      <item android:state_pressed="true">
+                          <shape android:shape="rectangle">
+                              <solid android:color="#0069C0"/>
+                              <corners android:radius="14dp"/>
+                              <stroke android:width="2dp" android:color="#FFFFFF"/>
+                          </shape>
+                      </item>
+                      <item>
+                          <shape android:shape="rectangle">
+                              <solid android:color="#0288D1"/>
+                              <corners android:radius="14dp"/>
+                          </shape>
+                      </item>
+                  </selector>
+              </item>
+          </ripple>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_button_reset.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <ripple xmlns:android="http://schemas.android.com/apk/res/android"
+              android:color="#80FFFFFF">
+              <item>
+                  <selector>
+                      <item android:state_pressed="true">
+                          <shape android:shape="rectangle">
+                              <solid android:color="#1A1A26"/>
+                              <corners android:radius="14dp"/>
+                              <stroke android:width="1.5dp" android:color="#00B0FF"/>
+                          </shape>
+                      </item>
+                      <item>
+                          <shape android:shape="rectangle">
+                              <solid android:color="#2A2A40"/>
+                              <corners android:radius="14dp"/>
+                          </shape>
+                      </item>
+                  </selector>
+              </item>
+          </ripple>
           EOF
 
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:orientation="vertical"
-              android:gravity="center_horizontal"
-              android:padding="24dp"
-              android:background="#0F0F1A">
-
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:layout_marginTop="20dp"
-                  android:layout_marginBottom="30dp">
-                  
-                  <ImageView
-                      android:layout_width="48dp"
-                      android:layout_height="48dp"
-                      android:src="@drawable/ic_logo"/>
-
-                  <LinearLayout
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:orientation="vertical"
-                      android:layout_marginStart="16dp">
-                      
-                      <TextView
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:text="NetSpeed Pro"
-                          android:textColor="#FFFFFF"
-                          android:textSize="20sp"
-                          android:textStyle="bold"/>
-
-                      <TextView
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:text="مراقب السرعة واستهلاك البيانات"
-                          android:textColor="#8F8FA3"
-                          android:textSize="12sp"/>
-                  </LinearLayout>
-              </LinearLayout>
+              android:background="#0D0D17"
+              android:fillViewport="true">
 
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:orientation="vertical"
-                  android:gravity="center"
-                  android:padding="24dp"
-                  android:background="@drawable/bg_card"
-                  android:layout_marginBottom="20dp">
+                  android:gravity="center_horizontal"
+                  android:padding="22dp">
 
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:gravity="center_vertical"
+                      android:layout_marginTop="10dp"
+                      android:layout_marginBottom="16dp">
+
+                      <ImageView
+                          android:layout_width="50dp"
+                          android:layout_height="50dp"
+                          android:src="@drawable/ic_logo"/>
+
+                      <LinearLayout
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:orientation="vertical"
+                          android:layout_marginStart="14dp">
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="NetSpeed Pro"
+                              android:textColor="#FFFFFF"
+                              android:textSize="22sp"
+                              android:textStyle="bold"/>
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="عداد السرعة واستهلاك الإنترنت (ستايل شاومي)"
+                              android:textColor="#8F8FA3"
+                              android:textSize="12sp"/>
+                      </LinearLayout>
+                  </LinearLayout>
+
+                  <!-- Status Badge -->
                   <TextView
+                      android:id="@+id/tvStatusBadge"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:text="السرعة الحالية"
-                      android:textColor="#8F8FA3"
+                      android:text="● المؤشر متوقف حالياً"
+                      android:textColor="#FF5252"
                       android:textSize="14sp"
-                      android:layout_marginBottom="8dp"/>
+                      android:textStyle="bold"
+                      android:paddingStart="20dp"
+                      android:paddingEnd="20dp"
+                      android:paddingTop="8dp"
+                      android:paddingBottom="8dp"
+                      android:background="@drawable/bg_status_off"
+                      android:layout_marginBottom="18dp"/>
 
-                  <TextView
-                      android:id="@+id/tvSpeed"
+                  <!-- Speed Card -->
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical"
+                      android:gravity="center"
+                      android:padding="22dp"
+                      android:background="@drawable/bg_card"
+                      android:layout_marginBottom="16dp">
+
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="سرعة الإنترنت اللحظية"
+                          android:textColor="#8F8FA3"
+                          android:textSize="14sp"
+                          android:layout_marginBottom="6dp"/>
+
+                      <TextView
+                          android:id="@+id/tvSpeed"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="0.00 KB/s"
+                          android:textColor="#00E676"
+                          android:textSize="40sp"
+                          android:textStyle="bold"/>
+                  </LinearLayout>
+
+                  <!-- Stats Row -->
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:weightSum="2"
+                      android:layout_marginBottom="22dp">
+
+                      <LinearLayout
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:orientation="vertical"
+                          android:gravity="center"
+                          android:padding="16dp"
+                          android:background="@drawable/bg_card"
+                          android:layout_marginEnd="8dp">
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="استهلاك الواي فاي"
+                              android:textColor="#8F8FA3"
+                              android:textSize="13sp"/>
+
+                          <TextView
+                              android:id="@+id/tvWifi"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="0 KB"
+                              android:textColor="#00B0FF"
+                              android:textSize="19sp"
+                              android:textStyle="bold"
+                              android:layout_marginTop="8dp"/>
+                      </LinearLayout>
+
+                      <LinearLayout
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:orientation="vertical"
+                          android:gravity="center"
+                          android:padding="16dp"
+                          android:background="@drawable/bg_card"
+                          android:layout_marginStart="8dp">
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="استهلاك البيانات"
+                              android:textColor="#8F8FA3"
+                              android:textSize="13sp"/>
+
+                          <TextView
+                              android:id="@+id/tvMobile"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="0 KB"
+                              android:textColor="#FFCA28"
+                              android:textSize="19sp"
+                              android:textStyle="bold"
+                              android:layout_marginTop="8dp"/>
+                      </LinearLayout>
+                  </LinearLayout>
+
+                  <!-- Buttons -->
+                  <Button
+                      android:id="@+id/btnStart"
+                      android:layout_width="match_parent"
+                      android:layout_height="54dp"
+                      android:text="▶ تشغيل المؤشر في الشريط العلوي"
+                      android:background="@drawable/bg_button_start"
+                      android:textColor="#FFFFFF"
+                      android:textSize="15sp"
+                      android:textStyle="bold"
+                      android:layout_marginBottom="12dp"/>
+
+                  <Button
+                      android:id="@+id/btnOverlay"
+                      android:layout_width="match_parent"
+                      android:layout_height="54dp"
+                      android:text="📌 إظهار العداد بجانب إشارة السيم (قابل للسحب)"
+                      android:background="@drawable/bg_button_overlay"
+                      android:textColor="#FFFFFF"
+                      android:textSize="14sp"
+                      android:textStyle="bold"
+                      android:layout_marginBottom="12dp"/>
+
+                  <Button
+                      android:id="@+id/btnStop"
+                      android:layout_width="match_parent"
+                      android:layout_height="54dp"
+                      android:text="⏹ إيقاف المؤشر"
+                      android:background="@drawable/bg_button_stop"
+                      android:textColor="#FFFFFF"
+                      android:textSize="15sp"
+                      android:textStyle="bold"
+                      android:layout_marginBottom="12dp"/>
+
+                  <Button
+                      android:id="@+id/btnReset"
+                      android:layout_width="match_parent"
+                      android:layout_height="48dp"
+                      android:text="🔄 تصفير عدادات الاستهلاك"
+                      android:background="@drawable/bg_button_reset"
+                      android:textColor="#D0D0E0"
+                      android:textSize="14sp"
+                      android:layout_marginBottom="16dp"/>
+
+                  <!-- Spacer to push footer to the bottom -->
+                  <View
+                      android:layout_width="match_parent"
+                      android:layout_height="0dp"
+                      android:layout_weight="1"/>
+
+                  <!-- Developer Credit Footer -->
+                  <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:text="0.0 KB/s"
-                      android:textColor="#00E676"
-                      android:textSize="40sp"
-                      android:textStyle="bold"/>
-              </LinearLayout>
-
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:orientation="horizontal"
-                  android:weightSum="2"
-                  android:layout_marginBottom="30dp">
-
-                  <LinearLayout
-                      android:layout_width="0dp"
-                      android:layout_height="wrap_content"
-                      android:layout_weight="1"
-                      android:orientation="vertical"
-                      android:padding="16dp"
-                      android:background="@drawable/bg_card"
-                      android:layout_marginEnd="8dp">
+                      android:orientation="horizontal"
+                      android:gravity="center"
+                      android:background="@drawable/bg_footer"
+                      android:paddingStart="24dp"
+                      android:paddingEnd="24dp"
+                      android:paddingTop="10dp"
+                      android:paddingBottom="10dp"
+                      android:layout_marginTop="8dp"
+                      android:layout_marginBottom="6dp">
 
                       <TextView
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:text="استهلاك الواي فاي"
-                          android:textColor="#8F8FA3"
-                          android:textSize="12sp"/>
-
-                      <TextView
-                          android:id="@+id/tvWifi"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:text="0 MB"
-                          android:textColor="#00B0FF"
-                          android:textSize="18sp"
+                          android:text="✨ تطوير عمو أبو الهود ✨"
+                          android:textColor="#00E676"
+                          android:textSize="15sp"
                           android:textStyle="bold"
-                          android:layout_marginTop="8dp"/>
+                          android:shadowColor="#8000E676"
+                          android:shadowDx="0"
+                          android:shadowDy="0"
+                          android:shadowRadius="8"/>
                   </LinearLayout>
 
-                  <LinearLayout
-                      android:layout_width="0dp"
-                      android:layout_height="wrap_content"
-                      android:layout_weight="1"
-                      android:orientation="vertical"
-                      android:padding="16dp"
-                      android:background="@drawable/bg_card"
-                      android:layout_marginStart="8dp">
-
-                      <TextView
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:text="استهلاك البيانات"
-                          android:textColor="#8F8FA3"
-                          android:textSize="12sp"/>
-
-                      <TextView
-                          android:id="@+id/tvMobile"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:text="0 MB"
-                          android:textColor="#FFCA28"
-                          android:textSize="18sp"
-                          android:textStyle="bold"
-                          android:layout_marginTop="8dp"/>
-                  </LinearLayout>
               </LinearLayout>
-
-              <Button
-                  android:id="@+id/btnStart"
-                  android:layout_width="match_parent"
-                  android:layout_height="52dp"
-                  android:text="تشغيل المؤشر بالاعلى"
-                  android:background="@drawable/bg_button_start"
-                  android:textColor="#FFFFFF"
-                  android:textSize="15sp"
-                  android:textStyle="bold"
-                  android:layout_marginBottom="12dp"/>
-
-              <Button
-                  android:id="@+id/btnStop"
-                  android:layout_width="match_parent"
-                  android:layout_height="52dp"
-                  android:text="إيقاف المؤشر"
-                  android:background="@drawable/bg_button_stop"
-                  android:textColor="#FFFFFF"
-                  android:textSize="15sp"
-                  android:textStyle="bold"
-                  android:layout_marginBottom="12dp"/>
-
-              <Button
-                  android:id="@+id/btnReset"
-                  android:layout_width="match_parent"
-                  android:layout_height="48dp"
-                  android:text="تصفير العدادات"
-                  android:backgroundTint="#2A2A3D"
-                  android:textColor="#B0B0C3"
-                  android:textSize="14sp"/>
-
-          </LinearLayout>
+          </ScrollView>
           EOF
 
-          cat << 'EOF' > app/src/main/java/com/example/netspeed/SpeedMeterService.kt
-          package com.example.netspeed
+          cat << 'EOF' > app/src/main/java/com/netspeed/pro/meter/SpeedMeterService.kt
+          package com.netspeed.pro.meter
 
           import android.app.*
           import android.content.Context
@@ -326,14 +563,22 @@ jobs:
           import android.graphics.*
           import android.net.TrafficStats
           import android.os.*
+          import android.provider.Settings
+          import android.util.TypedValue
+          import android.view.*
+          import android.widget.TextView
           import androidx.core.app.NotificationCompat
+          import androidx.core.graphics.drawable.IconCompat
+          import java.util.Locale
 
           class SpeedMeterService : Service() {
 
               private val handler = Handler(Looper.getMainLooper())
               private var lastTotalBytes: Long = 0
               private var lastMobileBytes: Long = 0
-              private val CHANNEL_ID = "NetSpeedProChannel"
+              private val CHANNEL_ID = "NetSpeedProLiveChannel"
+              private var windowManager: WindowManager? = null
+              private var floatingView: TextView? = null
 
               private val runnable = object : Runnable {
                   override fun run() {
@@ -355,9 +600,11 @@ jobs:
                           .putLong("wifi_bytes", totalWifi)
                           .putLong("mobile_bytes", totalMobile)
                           .putLong("current_speed", deltaTotal)
+                          .putBoolean("is_running", true)
                           .apply()
 
                       updateNotification(deltaTotal, totalWifi, totalMobile)
+                      updateFloatingOverlay(deltaTotal)
                       handler.postDelayed(this, 1000)
                   }
               }
@@ -368,13 +615,123 @@ jobs:
                   lastTotalBytes = TrafficStats.getTotalRxBytes() + TrafficStats.getTotalTxBytes()
                   lastMobileBytes = TrafficStats.getMobileRxBytes() + TrafficStats.getMobileTxBytes()
 
+                  getSharedPreferences("NetStats", Context.MODE_PRIVATE)
+                      .edit().putBoolean("is_running", true).apply()
+
                   val initialNotification = buildNotification(0L, 0L, 0L)
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                       startForeground(1, initialNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
                   } else {
                       startForeground(1, initialNotification)
                   }
-                  handler.postDelayed(runnable, 1000)
+                  handler.post(runnable)
+              }
+
+              override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+                  updateFloatingOverlay(0L)
+                  return START_STICKY
+              }
+
+              private fun updateFloatingOverlay(speedBytes: Long) {
+                  val prefs = getSharedPreferences("NetStats", Context.MODE_PRIVATE)
+                  val overlayEnabled = prefs.getBoolean("overlay_enabled", false)
+                  val canDraw = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                      Settings.canDrawOverlays(this)
+                  } else true
+
+                  if (!overlayEnabled || !canDraw) {
+                      removeFloatingOverlay()
+                      return
+                  }
+
+                  val (speedVal, speedUnit) = getSpeedParts(speedBytes)
+                  if (floatingView == null) {
+                      windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+                      val tv = TextView(this).apply {
+                          setTextColor(Color.WHITE)
+                          setShadowLayer(4f, 0f, 1f, Color.BLACK)
+                          setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f)
+                          typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                          gravity = Gravity.CENTER
+                          setLineSpacing(0f, 0.82f)
+                          setPadding(8, 2, 8, 2)
+                          text = "$speedVal\n$speedUnit"
+                      }
+
+                      val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                          WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                      } else {
+                          @Suppress("DEPRECATION")
+                          WindowManager.LayoutParams.TYPE_PHONE
+                      }
+
+                      val params = WindowManager.LayoutParams(
+                          WindowManager.LayoutParams.WRAP_CONTENT,
+                          WindowManager.LayoutParams.WRAP_CONTENT,
+                          layoutType,
+                          WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                                  WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                                  WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                          PixelFormat.TRANSLUCENT
+                      ).apply {
+                          gravity = Gravity.TOP or Gravity.START
+                          x = prefs.getInt("overlay_x", 420)
+                          y = prefs.getInt("overlay_y", 8)
+                      }
+
+                      tv.setOnTouchListener(object : View.OnTouchListener {
+                          private var initialX = 0
+                          private var initialY = 0
+                          private var initialTouchX = 0f
+                          private var initialTouchY = 0f
+
+                          override fun onTouch(v: View, event: MotionEvent): Boolean {
+                              when (event.action) {
+                                  MotionEvent.ACTION_DOWN -> {
+                                      initialX = params.x
+                                      initialY = params.y
+                                      initialTouchX = event.rawX
+                                      initialTouchY = event.rawY
+                                      return true
+                                  }
+                                  MotionEvent.ACTION_MOVE -> {
+                                      params.x = initialX + (event.rawX - initialTouchX).toInt()
+                                      params.y = initialY + (event.rawY - initialTouchY).toInt()
+                                      windowManager?.updateViewLayout(tv, params)
+                                      return true
+                                  }
+                                  MotionEvent.ACTION_UP -> {
+                                      prefs.edit()
+                                          .putInt("overlay_x", params.x)
+                                          .putInt("overlay_y", params.y)
+                                          .apply()
+                                      return true
+                                  }
+                              }
+                              return false
+                          }
+                      })
+
+                      try {
+                          windowManager?.addView(tv, params)
+                          floatingView = tv
+                      } catch (e: Exception) {
+                          e.printStackTrace()
+                      }
+                  } else {
+                      floatingView?.text = "$speedVal\n$speedUnit"
+                  }
+              }
+
+              private fun removeFloatingOverlay() {
+                  floatingView?.let {
+                      try {
+                          windowManager?.removeView(it)
+                      } catch (e: Exception) {
+                          e.printStackTrace()
+                      }
+                      floatingView = null
+                  }
               }
 
               private fun updateNotification(speedBytes: Long, wifiBytes: Long, mobileBytes: Long) {
@@ -388,29 +745,53 @@ jobs:
                   val mobileText = formatData(mobileBytes)
 
                   val openAppIntent = Intent(this, MainActivity::class.java)
-                  val pendingIntent = PendingIntent.getActivity(
-                      this, 0, openAppIntent, PendingIntent.FLAG_IMMUTABLE
-                  )
+                  val pendingFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                      PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                  } else {
+                      PendingIntent.FLAG_UPDATE_CURRENT
+                  }
+                  val pendingIntent = PendingIntent.getActivity(this, 0, openAppIntent, pendingFlags)
 
                   return NotificationCompat.Builder(this, CHANNEL_ID)
-                      .setContentTitle("السرعة: $speedVal $speedUnit")
-                      .setContentText("واي فاي: $wifiText | بيانات: $mobileText")
-                      .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                      .setContentTitle("السرعة الحالية: $speedVal $speedUnit")
+                      .setContentText("واي فاي: $wifiText  |  بيانات: $mobileText")
+                      .setSmallIcon(createSpeedIcon(speedVal, speedUnit))
                       .setContentIntent(pendingIntent)
                       .setOngoing(true)
                       .setOnlyAlertOnce(true)
                       .setSilent(true)
-                      .setPriority(NotificationCompat.PRIORITY_LOW)
+                      .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                       .build()
+              }
+
+              private fun createSpeedIcon(value: String, unit: String): IconCompat {
+                  val bitmap = Bitmap.createBitmap(96, 96, Bitmap.Config.ARGB_8888)
+                  val canvas = Canvas(bitmap)
+                  val paint = Paint().apply {
+                      color = Color.WHITE
+                      isAntiAlias = true
+                      textAlign = Paint.Align.CENTER
+                      typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                  }
+
+                  paint.textSize = if (value.length > 3) 38f else 46f
+                  canvas.drawText(value, 48f, 45f, paint)
+
+                  paint.textSize = 30f
+                  canvas.drawText(unit, 48f, 86f, paint)
+
+                  return IconCompat.createWithBitmap(bitmap)
               }
 
               private fun getSpeedParts(bytes: Long): Pair<String, String> {
                   val kb = bytes / 1024.0
                   val mb = kb / 1024.0
-                  return if (mb >= 1.0) {
-                      Pair(String.format("%.1f", mb), "MB/s")
-                  } else {
-                      Pair(String.format("%.0f", kb), "KB/s")
+                  return when {
+                      mb >= 10.0 -> Pair(String.format(Locale.US, "%.1f", mb), "MB/s")
+                      mb >= 1.0 -> Pair(String.format(Locale.US, "%.2f", mb), "MB/s")
+                      kb >= 100.0 -> Pair(String.format(Locale.US, "%.0f", kb), "KB/s")
+                      kb >= 10.0 -> Pair(String.format(Locale.US, "%.1f", kb), "KB/s")
+                      else -> Pair(String.format(Locale.US, "%.2f", kb), "KB/s")
                   }
               }
 
@@ -419,9 +800,9 @@ jobs:
                   val mb = kb / 1024.0
                   val gb = mb / 1024.0
                   return when {
-                      gb >= 1.0 -> String.format("%.2f GB", gb)
-                      mb >= 1.0 -> String.format("%.1f MB", mb)
-                      else -> String.format("%.0f KB", kb)
+                      gb >= 1.0 -> String.format(Locale.US, "%.2f GB", gb)
+                      mb >= 1.0 -> String.format(Locale.US, "%.1f MB", mb)
+                      else -> String.format(Locale.US, "%.0f KB", kb)
                   }
               }
 
@@ -429,10 +810,13 @@ jobs:
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                       val channel = NotificationChannel(
                           CHANNEL_ID,
-                          "NetSpeed Pro Service",
-                          NotificationManager.IMPORTANCE_LOW
-                      )
-                      channel.setShowBadge(false)
+                          "مؤشر السرعة المباشر",
+                          NotificationManager.IMPORTANCE_DEFAULT
+                      ).apply {
+                          setSound(null, null)
+                          enableVibration(false)
+                          setShowBadge(false)
+                      }
                       val manager = getSystemService(NotificationManager::class.java)
                       manager.createNotificationChannel(channel)
                   }
@@ -440,6 +824,12 @@ jobs:
 
               override fun onDestroy() {
                   handler.removeCallbacks(runnable)
+                  removeFloatingOverlay()
+                  getSharedPreferences("NetStats", Context.MODE_PRIVATE)
+                      .edit()
+                      .putBoolean("is_running", false)
+                      .putLong("current_speed", 0L)
+                      .apply()
                   super.onDestroy()
               }
 
@@ -447,25 +837,38 @@ jobs:
           }
           EOF
 
-          cat << 'EOF' > app/src/main/java/com/example/netspeed/MainActivity.kt
-          package com.example.netspeed
+          cat << 'EOF' > app/src/main/java/com/netspeed/pro/meter/MainActivity.kt
+          package com.netspeed.pro.meter
 
           import android.Manifest
           import android.content.Context
           import android.content.Intent
           import android.content.pm.PackageManager
+          import android.graphics.Color
+          import android.net.Uri
           import android.os.*
+          import android.provider.Settings
+          import android.view.HapticFeedbackConstants
+          import android.view.MotionEvent
+          import android.view.View
           import android.widget.Button
           import android.widget.TextView
+          import android.widget.Toast
           import androidx.appcompat.app.AppCompatActivity
           import androidx.core.app.ActivityCompat
           import androidx.core.content.ContextCompat
+          import java.util.Locale
 
           class MainActivity : AppCompatActivity() {
 
               private lateinit var tvSpeed: TextView
               private lateinit var tvWifi: TextView
               private lateinit var tvMobile: TextView
+              private lateinit var tvStatusBadge: TextView
+              private lateinit var btnStart: Button
+              private lateinit var btnStop: Button
+              private lateinit var btnOverlay: Button
+              private lateinit var btnReset: Button
               private val handler = Handler(Looper.getMainLooper())
 
               private val uiUpdater = object : Runnable {
@@ -474,12 +877,15 @@ jobs:
                       val speed = prefs.getLong("current_speed", 0L)
                       val wifi = prefs.getLong("wifi_bytes", 0L)
                       val mobile = prefs.getLong("mobile_bytes", 0L)
+                      val isRunning = prefs.getBoolean("is_running", false)
+                      val overlayEnabled = prefs.getBoolean("overlay_enabled", false)
 
-                      tvSpeed.text = formatData(speed) + "/s"
+                      tvSpeed.text = formatSpeed(speed)
                       tvWifi.text = formatData(wifi)
                       tvMobile.text = formatData(mobile)
 
-                      handler.postDelayed(this, 1000)
+                      updateRunningStateUI(isRunning, overlayEnabled)
+                      handler.postDelayed(this, 500)
                   }
               }
 
@@ -490,10 +896,16 @@ jobs:
                   tvSpeed = findViewById(R.id.tvSpeed)
                   tvWifi = findViewById(R.id.tvWifi)
                   tvMobile = findViewById(R.id.tvMobile)
+                  tvStatusBadge = findViewById(R.id.tvStatusBadge)
+                  btnStart = findViewById(R.id.btnStart)
+                  btnStop = findViewById(R.id.btnStop)
+                  btnOverlay = findViewById(R.id.btnOverlay)
+                  btnReset = findViewById(R.id.btnReset)
 
-                  val btnStart: Button = findViewById(R.id.btnStart)
-                  val btnStop: Button = findViewById(R.id.btnStop)
-                  val btnReset: Button = findViewById(R.id.btnReset)
+                  applyHoverAndPressEffect(btnStart)
+                  applyHoverAndPressEffect(btnStop)
+                  applyHoverAndPressEffect(btnOverlay)
+                  applyHoverAndPressEffect(btnReset)
 
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                       if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -505,13 +917,43 @@ jobs:
                   btnStart.setOnClickListener {
                       val serviceIntent = Intent(this, SpeedMeterService::class.java)
                       ContextCompat.startForegroundService(this, serviceIntent)
+                      Toast.makeText(this, "✅ تم تشغيل مؤشر السرعة في الأعلى", Toast.LENGTH_SHORT).show()
                   }
 
                   btnStop.setOnClickListener {
                       val serviceIntent = Intent(this, SpeedMeterService::class.java)
                       stopService(serviceIntent)
                       getSharedPreferences("NetStats", Context.MODE_PRIVATE)
-                          .edit().putLong("current_speed", 0L).apply()
+                          .edit()
+                          .putBoolean("is_running", false)
+                          .putLong("current_speed", 0L)
+                          .apply()
+                      Toast.makeText(this, "🛑 تم إيقاف مؤشر السرعة", Toast.LENGTH_SHORT).show()
+                  }
+
+                  btnOverlay.setOnClickListener {
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                          Toast.makeText(this, "يرجى السماح بالظهور فوق التطبيقات لوضع العداد بجانب السيم", Toast.LENGTH_LONG).show()
+                          val intent = Intent(
+                              Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                              Uri.parse("package:$packageName")
+                          )
+                          startActivity(intent)
+                          return@setOnClickListener
+                      }
+
+                      val prefs = getSharedPreferences("NetStats", Context.MODE_PRIVATE)
+                      val newState = !prefs.getBoolean("overlay_enabled", false)
+                      prefs.edit().putBoolean("overlay_enabled", newState).apply()
+
+                      val serviceIntent = Intent(this, SpeedMeterService::class.java)
+                      ContextCompat.startForegroundService(this, serviceIntent)
+
+                      if (newState) {
+                          Toast.makeText(this, "📌 تم إظهار العداد! اسحبه بإصبعك بجانب إشارة السيم", Toast.LENGTH_LONG).show()
+                      } else {
+                          Toast.makeText(this, "تم إخفاء العداد العائم", Toast.LENGTH_SHORT).show()
+                      }
                   }
 
                   btnReset.setOnClickListener {
@@ -520,6 +962,50 @@ jobs:
                           .putLong("wifi_bytes", 0L)
                           .putLong("mobile_bytes", 0L)
                           .apply()
+                      Toast.makeText(this, "🔄 تم تصفير عدادات الاستهلاك", Toast.LENGTH_SHORT).show()
+                  }
+              }
+
+              private fun updateRunningStateUI(isRunning: Boolean, overlayEnabled: Boolean) {
+                  if (isRunning) {
+                      tvStatusBadge.text = "● المؤشر شغّال الآن في أعلى الشاشة"
+                      tvStatusBadge.setTextColor(Color.parseColor("#00E676"))
+                      tvStatusBadge.setBackgroundResource(R.drawable.bg_status_on)
+
+                      btnStart.text = "✅ المؤشر قيد التشغيل حالياً"
+                      btnStart.alpha = 0.65f
+                      btnStop.text = "⏹ إيقاف المؤشر الآن"
+                      btnStop.alpha = 1.0f
+                  } else {
+                      tvStatusBadge.text = "● المؤشر متوقف حالياً"
+                      tvStatusBadge.setTextColor(Color.parseColor("#FF5252"))
+                      tvStatusBadge.setBackgroundResource(R.drawable.bg_status_off)
+
+                      btnStart.text = "▶ تشغيل المؤشر في الشريط العلوي"
+                      btnStart.alpha = 1.0f
+                      btnStop.text = "⏹ المؤشر متوقف"
+                      btnStop.alpha = 0.65f
+                  }
+
+                  if (overlayEnabled) {
+                      btnOverlay.text = "📌 إخفاء العداد العائم بجانب السيم"
+                  } else {
+                      btnOverlay.text = "📌 إظهار العداد بجانب إشارة السيم (مثل الشاومي)"
+                  }
+              }
+
+              private fun applyHoverAndPressEffect(view: View) {
+                  view.setOnTouchListener { v, event ->
+                      when (event.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                              v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(90).start()
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(90).start()
+                          }
+                      }
+                      false
                   }
               }
 
@@ -533,24 +1019,28 @@ jobs:
                   handler.removeCallbacks(uiUpdater)
               }
 
+              private fun formatSpeed(bytes: Long): String {
+                  val kb = bytes / 1024.0
+                  val mb = kb / 1024.0
+                  return if (mb >= 1.0) {
+                      String.format(Locale.US, "%.2f MB/s", mb)
+                  } else {
+                      String.format(Locale.US, "%.2f KB/s", kb)
+                  }
+              }
+
               private fun formatData(bytes: Long): String {
                   val kb = bytes / 1024.0
                   val mb = kb / 1024.0
                   val gb = mb / 1024.0
                   return when {
-                      gb >= 1.0 -> String.format("%.2f GB", gb)
-                      mb >= 1.0 -> String.format("%.1f MB", mb)
-                      else -> String.format("%.0f KB", kb)
+                      gb >= 1.0 -> String.format(Locale.US, "%.2f GB", gb)
+                      mb >= 1.0 -> String.format(Locale.US, "%.1f MB", mb)
+                      else -> String.format(Locale.US, "%.0f KB", kb)
                   }
               }
           }
           EOF
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
