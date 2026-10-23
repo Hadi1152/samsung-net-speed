@@ -73,8 +73,8 @@ jobs:
                   applicationId "com.netspeed.pro.meter"
                   minSdk 21
                   targetSdk 34
-                  versionCode 4
-                  versionName "4.0"
+                  versionCode 5
+                  versionName "5.0"
               }
 
               signingConfigs {
@@ -177,11 +177,16 @@ jobs:
 
           cat << 'EOF' > app/src/main/res/drawable/bg_footer.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#141424"/>
-              <corners android:radius="30dp"/>
-              <stroke android:width="1dp" android:color="#3000E676"/>
-          </shape>
+          <ripple xmlns:android="http://schemas.android.com/apk/res/android"
+              android:color="#8000E676">
+              <item>
+                  <shape android:shape="rectangle">
+                      <solid android:color="#141424"/>
+                      <corners android:radius="30dp"/>
+                      <stroke android:width="1dp" android:color="#5000E676"/>
+                  </shape>
+              </item>
+          </ripple>
           EOF
 
           cat << 'EOF' > app/src/main/res/drawable/bg_status_on.xml
@@ -357,9 +362,9 @@ jobs:
                           <TextView
                               android:layout_width="wrap_content"
                               android:layout_height="wrap_content"
-                              android:text="عداد السرعة واستهلاك الإنترنت (ستايل شاومي)"
+                              android:text="عداد السرعة واستهلاك الإنترنت"
                               android:textColor="#8F8FA3"
-                              android:textSize="12sp"/>
+                              android:textSize="13sp"/>
                       </LinearLayout>
                   </LinearLayout>
 
@@ -488,7 +493,7 @@ jobs:
                       android:id="@+id/btnOverlay"
                       android:layout_width="match_parent"
                       android:layout_height="54dp"
-                      android:text="📌 إظهار العداد بجانب إشارة السيم (قابل للسحب)"
+                      android:text="📌 إظهار العداد العائم بجانب إشارة السيم"
                       android:background="@drawable/bg_button_overlay"
                       android:textColor="#FFFFFF"
                       android:textSize="14sp"
@@ -516,18 +521,21 @@ jobs:
                       android:textSize="14sp"
                       android:layout_marginBottom="16dp"/>
 
-                  <!-- Spacer to push footer to the bottom -->
+                  <!-- Spacer -->
                   <View
                       android:layout_width="match_parent"
                       android:layout_height="0dp"
                       android:layout_weight="1"/>
 
-                  <!-- Developer Credit Footer -->
+                  <!-- Clickable Developer Credit Footer -->
                   <LinearLayout
+                      android:id="@+id/footerDeveloper"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:orientation="horizontal"
                       android:gravity="center"
+                      android:clickable="true"
+                      android:focusable="true"
                       android:background="@drawable/bg_footer"
                       android:paddingStart="24dp"
                       android:paddingEnd="24dp"
@@ -564,6 +572,9 @@ jobs:
           import android.net.TrafficStats
           import android.os.*
           import android.provider.Settings
+          import android.text.SpannableString
+          import android.text.Spanned
+          import android.text.style.RelativeSizeSpan
           import android.util.TypedValue
           import android.view.*
           import android.widget.TextView
@@ -632,6 +643,18 @@ jobs:
                   return START_STICKY
               }
 
+              private fun formatCompactOverlayText(speedVal: String, speedUnit: String): SpannableString {
+                  val full = "$speedVal\n$speedUnit"
+                  val span = SpannableString(full)
+                  span.setSpan(
+                      RelativeSizeSpan(0.78f),
+                      speedVal.length + 1,
+                      full.length,
+                      Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                  )
+                  return span
+              }
+
               private fun updateFloatingOverlay(speedBytes: Long) {
                   val prefs = getSharedPreferences("NetStats", Context.MODE_PRIVATE)
                   val overlayEnabled = prefs.getBoolean("overlay_enabled", false)
@@ -645,17 +668,24 @@ jobs:
                   }
 
                   val (speedVal, speedUnit) = getSpeedParts(speedBytes)
+                  val styledText = formatCompactOverlayText(speedVal, speedUnit)
+
                   if (floatingView == null) {
                       windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+                      val metrics = resources.displayMetrics
+                      val defaultX = (metrics.widthPixels * 0.56f).toInt()
+                      val defaultY = (metrics.density * 6f).toInt()
+
                       val tv = TextView(this).apply {
                           setTextColor(Color.WHITE)
-                          setShadowLayer(4f, 0f, 1f, Color.BLACK)
-                          setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f)
-                          typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                          setShadowLayer(2.5f, 0f, 1f, Color.BLACK)
+                          setTextSize(TypedValue.COMPLEX_UNIT_SP, 7.8f)
+                          typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
                           gravity = Gravity.CENTER
-                          setLineSpacing(0f, 0.82f)
-                          setPadding(8, 2, 8, 2)
-                          text = "$speedVal\n$speedUnit"
+                          includeFontPadding = false
+                          setLineSpacing(0f, 0.78f)
+                          setPadding(6, 2, 6, 2)
+                          text = styledText
                       }
 
                       val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -674,9 +704,13 @@ jobs:
                                   WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                           PixelFormat.TRANSLUCENT
                       ).apply {
-                          gravity = Gravity.TOP or Gravity.START
-                          x = prefs.getInt("overlay_x", 420)
-                          y = prefs.getInt("overlay_y", 8)
+                          gravity = Gravity.TOP or Gravity.LEFT
+                          x = prefs.getInt("overlay_x_v5", defaultX)
+                          y = prefs.getInt("overlay_y_v5", defaultY)
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                              layoutInDisplayCutoutMode =
+                                  WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                          }
                       }
 
                       tv.setOnTouchListener(object : View.OnTouchListener {
@@ -696,14 +730,14 @@ jobs:
                                   }
                                   MotionEvent.ACTION_MOVE -> {
                                       params.x = initialX + (event.rawX - initialTouchX).toInt()
-                                      params.y = initialY + (event.rawY - initialTouchY).toInt()
+                                      params.y = (initialY + (event.rawY - initialTouchY).toInt()).coerceAtLeast(0)
                                       windowManager?.updateViewLayout(tv, params)
                                       return true
                                   }
                                   MotionEvent.ACTION_UP -> {
                                       prefs.edit()
-                                          .putInt("overlay_x", params.x)
-                                          .putInt("overlay_y", params.y)
+                                          .putInt("overlay_x_v5", params.x)
+                                          .putInt("overlay_y_v5", params.y)
                                           .apply()
                                       return true
                                   }
@@ -719,7 +753,7 @@ jobs:
                           e.printStackTrace()
                       }
                   } else {
-                      floatingView?.text = "$speedVal\n$speedUnit"
+                      floatingView?.text = styledText
                   }
               }
 
@@ -852,8 +886,10 @@ jobs:
           import android.view.MotionEvent
           import android.view.View
           import android.widget.Button
+          import android.widget.LinearLayout
           import android.widget.TextView
           import android.widget.Toast
+          import androidx.appcompat.app.AlertDialog
           import androidx.appcompat.app.AppCompatActivity
           import androidx.core.app.ActivityCompat
           import androidx.core.content.ContextCompat
@@ -869,6 +905,7 @@ jobs:
               private lateinit var btnStop: Button
               private lateinit var btnOverlay: Button
               private lateinit var btnReset: Button
+              private lateinit var footerDeveloper: LinearLayout
               private val handler = Handler(Looper.getMainLooper())
 
               private val uiUpdater = object : Runnable {
@@ -901,11 +938,13 @@ jobs:
                   btnStop = findViewById(R.id.btnStop)
                   btnOverlay = findViewById(R.id.btnOverlay)
                   btnReset = findViewById(R.id.btnReset)
+                  footerDeveloper = findViewById(R.id.footerDeveloper)
 
                   applyHoverAndPressEffect(btnStart)
                   applyHoverAndPressEffect(btnStop)
                   applyHoverAndPressEffect(btnOverlay)
                   applyHoverAndPressEffect(btnReset)
+                  applyHoverAndPressEffect(footerDeveloper)
 
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                       if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -964,6 +1003,15 @@ jobs:
                           .apply()
                       Toast.makeText(this, "🔄 تم تصفير عدادات الاستهلاك", Toast.LENGTH_SHORT).show()
                   }
+
+                  footerDeveloper.setOnClickListener {
+                      val message = "أحلى تحية لعمو نور الغالي❤️❤️❤️"
+                      Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                      AlertDialog.Builder(this)
+                          .setMessage(message)
+                          .setPositiveButton("حبيب القلب ❤️", null)
+                          .show()
+                  }
               }
 
               private fun updateRunningStateUI(isRunning: Boolean, overlayEnabled: Boolean) {
@@ -990,7 +1038,7 @@ jobs:
                   if (overlayEnabled) {
                       btnOverlay.text = "📌 إخفاء العداد العائم بجانب السيم"
                   } else {
-                      btnOverlay.text = "📌 إظهار العداد بجانب إشارة السيم (مثل الشاومي)"
+                      btnOverlay.text = "📌 إظهار العداد العائم بجانب إشارة السيم"
                   }
               }
 
